@@ -30,3 +30,8 @@ VARIANTS.update({
     "V15": dict(event="h1_disp_lead", event_kw=dict(lead="spot"), **_X),
     "V16": dict(event="h1_disp_lead", event_kw=dict(lead="perp"), **_X),
 })
+
+VARIANTS.update({
+    "V17": dict(event="h1_disp_lead_k", event_kw=dict(lead="spot", k=1.5), **_X),
+    "V18": dict(event="h1_disp_lead_k", event_kw=dict(lead="spot", k=2.0), **_X),
+})

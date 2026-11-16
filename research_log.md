@@ -222,3 +222,25 @@ Perp premium over spot = fut close / spot close - 1 at 1H closes.
 |---|---|---|---|
 | V15 | 1H displacement where SPOT led (premium fell on an up-move / rose on a down-move); exits as V04 | spot-led = unlevered real demand (institutional/ETF-style flow) -> persists | V15 > V04 |
 | V16 | 1H displacement where the PERP led (premium widened in the move direction) | leverage-led chase -> less continuation | V16 < V04 |
+
+### Result V15-V16 (Train). Variants used: 16.
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x [90% CI] | PF | by year 2020/21/22/23 | note |
+|---|---|---|---|---|---|---|
+| V15 spot-led | 128 | **+0.282 [+0.09,+0.47]** | +0.202 [+0.01,+0.40] | 1.60 | -0.15/+0.20/+0.59/-0.07 | first variant to clear the expectancy bar on Train |
+| V16 perp-led | 277 | -0.045 [-0.17,+0.08] | -0.126 | 0.92 | -0.12/-0.06/+0.16/-0.05 | ordering as predicted |
+
+Cautions written immediately: (1) this is the best of 16 variants after 64 event tests — selection bias is large;
+(2) only 31 trades/yr -> validation+holdout would give ~85 trades, below the 150 minimum -> INCONCLUSIVE by construction;
+(3) negative in 2 of 4 full train years; 59% of quarters profitable (< 70% bar); 2022 and Jan-2024 (6 trades, +11R, ETF approval month) carry it.
+(4) possible partial artefact: when spot has led, the perp may simply catch up a few bps in the next minutes (lead-lag), which is
+real but would be tiny relative to the +34 bps gross per trade seen here.
+
+### Pre-registration V17-V18 (redesign for sample size, as the brief requires). Train only.
+
+Same logic, lower displacement threshold so that the OOS sample can reach 150 trades:
+| id | rule | prediction |
+|---|---|---|
+| V17 | spot-led 1H displacement with range > 1.5 ATR1h (instead of 2.5); exits as V04 | ~3x trades; edge diluted but > 0 if the mechanism is real (dose-response: V15 > V18 > V17) |
+| V18 | same with range > 2.0 ATR1h | in between |
+If V17/V18 are ~0 the V15 result is most likely a small-sample peak.

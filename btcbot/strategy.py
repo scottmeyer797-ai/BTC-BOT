@@ -20,6 +20,8 @@ EVENT_FUNCS = {
     "h1_disp_oi": ev.h1_disp_oi,
     "cascade_reclaim": ev.cascade_reclaim,
     "h1_disp_lead": ev.h1_disp_lead,
+    "h1_disp_lead_k": ev.h1_disp_lead_k,
+    "h1_disp_k": ev.h1_disp_k,
 }
 
 

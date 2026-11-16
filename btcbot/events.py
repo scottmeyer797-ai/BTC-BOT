@@ -169,6 +169,21 @@ def cascade_reclaim(f, z=3.0, v=3.0, oi_drop=0.005, window=12):
     return out
 
 
+def h1_disp_k(f, k=2.5):
+    """Parametrised 1H displacement (k=2.5 reproduces e4h_h1_displacement)."""
+    big = f["h1_range_atr"] > k
+    l = big & (f["h1_pos"] >= 0.75) & (f["h1_brk"] > 0)
+    s = big & (f["h1_pos"] <= 0.25) & (f["h1_brk"] < 0)
+    return _mk(f, s, l)
+
+
+def h1_disp_lead_k(f, lead="spot", k=2.5):
+    d = h1_disp_k(f, k)
+    x = d * np.sign(f["h1_prem_chg"])
+    ok = (x < 0) if lead == "spot" else (x > 0)
+    return d.where(ok, 0).astype("int8")
+
+
 def h1_disp_lead(f, lead="spot"):
     """1H displacement split by who led: 'spot' = perp premium fell during an up-move (rose during a
     down-move), i.e. spot moved further than the perp; 'perp' = the opposite (leverage-led)."""

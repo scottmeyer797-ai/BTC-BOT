@@ -120,6 +120,10 @@ def build_features(df1: pd.DataFrame, oi: pd.Series | None = None, spot: pd.Data
     dn = (rng1 > 2.5 * atr1) & (pos1 <= 0.25) & (h1["close"] < h1["low"].rolling(24).min().shift(1))
     d1 = pd.Series(up.astype(int) - dn.astype(int)).to_numpy()
     f["h1_disp"] = pd.Series(d1, index=known - pd.Timedelta(minutes=5)).reindex(f.index).fillna(0).astype("int8").to_numpy()
+    at_close = known - pd.Timedelta(minutes=5)             # 5m row whose close coincides with the 1H close
+    brk = (h1["close"] > h1["high"].rolling(24).max().shift(1)).astype(int) - (h1["close"] < h1["low"].rolling(24).min().shift(1)).astype(int)
+    for name, v in (("h1_range_atr", rng1 / atr1), ("h1_pos", pos1), ("h1_brk", brk)):
+        f[name] = pd.Series(v.to_numpy(), index=at_close).reindex(f.index).to_numpy()   # NaN except on 1H-close rows
     f["h1_atr"] = pd.Series(tr1.rolling(14).mean().to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
 
     h1d = (2 * h1["taker_buy_volume"] - h1["volume"]) / h1["volume"].where(h1["volume"] > 0)
