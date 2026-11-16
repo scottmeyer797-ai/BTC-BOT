@@ -122,6 +122,9 @@ def build_features(df1: pd.DataFrame, oi: pd.Series | None = None) -> pd.DataFra
     f["h1_disp"] = pd.Series(d1, index=known - pd.Timedelta(minutes=5)).reindex(f.index).fillna(0).astype("int8").to_numpy()
     f["h1_atr"] = pd.Series(tr1.rolling(14).mean().to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
 
+    h1d = (2 * h1["taker_buy_volume"] - h1["volume"]) / h1["volume"].where(h1["volume"] > 0)
+    f["h1_delta_frac"] = pd.Series(h1d.to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
+
     if oi is not None:
         # snapshot stamped at bar close (t+5m) vs snapshot at bar open (t).  NOTE: assumes the OI
         # snapshot stamped t+5m is observable at t+5m (live: REST poll). Flagged as an assumption.
@@ -130,4 +133,6 @@ def build_features(df1: pd.DataFrame, oi: pd.Series | None = None) -> pd.DataFra
         f["oi_chg"] = o_close / o_open - 1.0
         o_lag = oi.reindex(f.index - pd.Timedelta(minutes=5)).to_numpy()
         f["oi_chg_lag"] = o_open / o_lag - 1.0              # strictly lagged alternative
+        o_1h = oi.reindex(t_close - pd.Timedelta(hours=1)).to_numpy()
+        f["oi_chg_1h"] = o_close / o_1h - 1.0               # OI change over the hour ending at bar close
     return f

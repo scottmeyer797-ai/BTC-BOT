@@ -38,11 +38,11 @@ def random_baseline(df1, f, fund, p: dict, trades: pd.DataFrame, split: str, mul
     base = base[(base.index >= a) & (base.index < b) & np.isfinite(base["stop_dist"]) & (base["stop_dist"] > 0)]
     hours = trades["signal_time"].dt.hour.to_numpy()
     by_hour = {h: np.where(base.index.hour == h)[0] for h in range(24)}
+    hs, cnt = np.unique(hours, return_counts=True)
     long_share = float((trades["dir"] > 0).mean())
     means = np.empty(n_sims)
     for k in range(n_sims):
-        pick = np.array([rng.choice(by_hour[h]) for h in hours])
-        pick = np.unique(pick)
+        pick = np.unique(np.concatenate([rng.choice(by_hour[h], size=c) for h, c in zip(hs, cnt)]))
         s = base.iloc[pick].copy()
         s["dir"] = np.where(rng.random(len(s)) < long_share, 1, -1)
         t = run_backtest(df1, fund, s, a, b, BASE.scaled(mult), mode=1 if "limit_off_atr" in p else 0,

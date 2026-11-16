@@ -151,3 +151,29 @@ Stops are scaled to 1H ATR (typ. 60-120 bps) so that the 12 bps round trip is ~0
 | V03 | cascade E5b (z>3, vol>3x, OI>=0.5%) fade; same exits | exp <= 0 after costs |
 | V04 | 1H displacement follow; stop 1.0 ATR1h, RR 2, time stop 240m | exp slightly > 0; inconsistent by year |
 | V05 | Asia-range sweep FOLLOW (E2r); same exits | exp ~ 0 or negative after costs |
+
+### Result V01-V05 (Train, 1.0x / 1.5x costs) — `reports/variants.csv`
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x | PF | random-entry mean R (p) | note |
+|---|---|---|---|---|---|---|
+| V01 | 762 | -0.246 [-0.32,-0.17] | -0.335 | 0.66 | -0.168 (p=0.97) | worse than random; gross R is already -0.10 |
+| V02 | 386 | -0.276 [-0.38,-0.17] | -0.363 | 0.63 | -0.174 (0.97) | more extreme = no better |
+| V03 | 1955 | -0.195 [-0.24,-0.15] | -0.283 | 0.71 | -0.170 (0.82) | fails |
+| V04 | 405 | +0.058 [-0.05,+0.17] | -0.022 | 1.11 | -0.169 (0.003) | beats random; gross +0.19R; costs 0.13R; by year -0.13/+0.02/+0.35/-0.06 |
+| V05 | 2353 | -0.145 [-0.19,-0.11] | -0.240 | 0.76 | -0.182 (0.08) | fails |
+
+Diagnosis:
+- Cascade fade: the positive 4h drift from Phase 0b does NOT survive a 1-ATR stop. 58% of trades are stopped; post-cascade
+  volatility is far above the lagging 1H ATR and the flush typically continues before it bounces. My prediction "exp > 0" for V01 was wrong.
+- Costs are ~0.13-0.15R per trade with a 1 ATR(1H) stop (~90 bps). Random entries lose exactly that.
+- V04 is the only variant with a gross edge, but it is small, regime-dependent (2022 carries it) and gone at 1.5x costs.
+
+### Pre-registration V06-V10 (written BEFORE running; Train only). Variants used so far: 5.
+
+| id | rule | reasoning | prediction |
+|---|---|---|---|
+| V06 | 1H displacement follow; stop 2.0 ATR1h, RR 2, time stop 720m | cost diagnosis: halve cost-in-R and give continuation time | exp ~ +0.05..0.12R, still below bar, still regime-dependent |
+| V07 | cascade E5c fade; stop 3.0 ATR1h, RR 1, time stop 240m | tests if the Phase-0b drift is extractable at all once the stop is out of the way | exp ~ 0..+0.03R (drift 17bps - 12bps over ~270bps risk); fails bar |
+| V08 | "trend sweep": 1H trend up + 5m sweep of prior 4h low with close back above (mirror), London/NY 07-17 UTC; stop 1 ATR1h, RR 2, 240m | the user's preferred HTF-bias + LTF-liquidity-raid + session window style | Phase 0 (E1t) says no edge: exp ~ -0.15R (= costs) |
+| V09 | 1H displacement WITH rising open interest over the hour; exits as V04 | rising OI = new positions = initiative flow that should continue | V09 > V04 |
+| V10 | 1H displacement WITH falling open interest; exits as V04 | falling OI = squeeze/liquidations, fuel is spent | V10 < V04 |

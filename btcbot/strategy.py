@@ -16,6 +16,8 @@ EVENT_FUNCS = {
     "displacement": ev.e4_displacement,
     "delta_div": lambda f: ev.e6_delta_div(f),
     "h1_disp": lambda f: ev.e4h_h1_displacement(f),
+    "trend_sweep": lambda f: ev.trend_sweep(f),
+    "h1_disp_oi": ev.h1_disp_oi,
 }
 
 

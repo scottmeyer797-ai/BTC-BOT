@@ -110,6 +110,22 @@ def e4h_h1_displacement(f):
     return d.astype("int8")
 
 
+def trend_sweep(f):
+    """Liquidity raid against the 1H trend: in an up-trend (1H close > EMA50) a 5m bar trades below
+    the prior 4h low and closes back above it -> long. Mirrored for down-trends."""
+    l = (f["h1_bias"] > 0) & (f["low"] < f["ll_prev"]) & (f["close"] > f["ll_prev"])
+    s = (f["h1_bias"] < 0) & (f["high"] > f["hh_prev"]) & (f["close"] < f["hh_prev"])
+    return _mk(f, s, l)
+
+
+def h1_disp_oi(f, oi_sign=1):
+    """1H displacement with open interest rising (oi_sign=+1: new positions, initiative flow) or
+    falling (oi_sign=-1: position closing / squeeze) during the displacement hour."""
+    d = e4h_h1_displacement(f)
+    ok = (np.sign(f["oi_chg_1h"]) == oi_sign)
+    return d.where(ok, 0).astype("int8")
+
+
 EVENTS_0B = {
     "E5c_cascade_z4_v5_oi1.0_fade": lambda f: e5_cascade(f, z=4, v=5, oi_drop=0.010),
     "E5d_cascade_z5_v5_oi1.5_fade": lambda f: e5_cascade(f, z=5, v=5, oi_drop=0.015),

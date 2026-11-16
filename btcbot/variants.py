@@ -10,3 +10,11 @@ VARIANTS.update({
     "V04": dict(event="h1_disp", **_X),
     "V05": dict(event="asia_sweep", flip=-1, **_X),
 })
+
+VARIANTS.update({
+    "V06": dict(event="h1_disp", k_stop=2.0, rr=2.0, max_hold=720),
+    "V07": dict(event="cascade", event_kw=dict(z=4, v=5, oi_drop=0.010), k_stop=3.0, rr=1.0, max_hold=240),
+    "V08": dict(event="trend_sweep", hours=(7, 17), k_stop=1.0, rr=2.0, max_hold=240),
+    "V09": dict(event="h1_disp_oi", event_kw=dict(oi_sign=1), **_X),
+    "V10": dict(event="h1_disp_oi", event_kw=dict(oi_sign=-1), **_X),
+})

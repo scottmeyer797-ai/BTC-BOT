@@ -85,6 +85,24 @@ def _simulate(o, h, l, entry_idx, direction, stop_dist, tgt_dist, max_hold, end_
     return out[:k]
 
 
+_CTX: dict = {}
+
+
+def _context(df1: pd.DataFrame, funding: pd.Series):
+    """Arrays shared by all runs on the same data (cached by object identity)."""
+    key = (id(df1), id(funding), len(df1))
+    if key not in _CTX:
+        _CTX.clear()
+        idx = df1.index
+        fr = np.zeros(len(idx) + 2)
+        fu = funding[funding.index <= idx[-1]]
+        fpos = idx.get_indexer(fu.index)
+        fr[fpos[fpos >= 0]] = fu.to_numpy()[fpos >= 0]
+        _CTX[key] = (df1["open"].to_numpy(), df1["high"].to_numpy(), df1["low"].to_numpy(),
+                     np.concatenate([[0.0], np.cumsum(fr)]))
+    return _CTX[key]
+
+
 def run_backtest(df1: pd.DataFrame, funding: pd.Series, signals: pd.DataFrame,
                  start: pd.Timestamp, end: pd.Timestamp, costs: Costs = BASE,
                  mode: int = 0, limit_win: int = 30) -> pd.DataFrame:
@@ -94,16 +112,13 @@ def run_backtest(df1: pd.DataFrame, funding: pd.Series, signals: pd.DataFrame,
     idx = df1.index
     s = signals[(signals.index >= start) & (signals.index < end) & (signals["dir"] != 0)]
     s = s[np.isfinite(s["stop_dist"]) & (s["stop_dist"] > 0) & np.isfinite(s["tgt_dist"])]
-    e_idx = idx.get_indexer(s.index)
-    assert (e_idx >= 0).all()
+    e_idx = ((s.index - idx[0]) // pd.Timedelta(minutes=1)).to_numpy()   # df1 is a complete 1m grid
+    assert len(s) == 0 or (e_idx.min() >= 0 and e_idx.max() < len(idx))
     end_idx = int(idx.searchsorted(end))
-    fr = np.zeros(len(idx) + 2)
-    fpos = idx.get_indexer(funding.index[funding.index <= idx[-1]])
-    fr[fpos[fpos >= 0]] = funding.to_numpy()[: len(fpos)][fpos >= 0]
-    fund_cum = np.concatenate([[0.0], np.cumsum(fr)])
+    o, h, l, fund_cum = _context(df1, funding)
     m = costs.mult
     lo = s["limit_off"].to_numpy(float) if "limit_off" in s else np.zeros(len(s))
-    out = _simulate(df1["open"].to_numpy(), df1["high"].to_numpy(), df1["low"].to_numpy(),
+    out = _simulate(o, h, l,
                     e_idx.astype(np.int64), s["dir"].to_numpy(np.int64), s["stop_dist"].to_numpy(float),
                     s["tgt_dist"].to_numpy(float), s["max_hold"].to_numpy(np.int64), end_idx, fund_cum,
                     costs.taker * m, costs.maker * m, costs.slip_mkt * m, costs.slip_stop * m, TICK,
