@@ -93,6 +93,33 @@ def e7b_london_open_drive(f):
     return _open_drive(f, "Europe/London", 8, 0)
 
 
+def e1t_pd_sweep_with_bias(f):
+    """E1 restricted to sweeps against the 1H trend (sweep of PDL while 1H close > EMA50 -> long)."""
+    d = e1_pd_sweep(f)
+    return d.where(d == f["h1_bias"], 0).astype("int8")
+
+
+def e2r_asia_break_follow(f):
+    """Data-driven reversal of E2 (the sweep bar is followed, not faded)."""
+    return (-e2_asia_sweep(f)).astype("int8")
+
+
+def e4h_h1_displacement(f):
+    d = f["h1_disp"].copy()
+    d[f["filled"] | f["zero_vol"]] = 0
+    return d.astype("int8")
+
+
+EVENTS_0B = {
+    "E5c_cascade_z4_v5_oi1.0_fade": lambda f: e5_cascade(f, z=4, v=5, oi_drop=0.010),
+    "E5d_cascade_z5_v5_oi1.5_fade": lambda f: e5_cascade(f, z=5, v=5, oi_drop=0.015),
+    "E5e_cascade_oi_drop_LAGGED_fade": lambda f: e5_cascade(f, oi_drop=0.005, oi_col="oi_chg_lag"),
+    "E5b_cascade_oi_drop_fade(long horizons)": lambda f: e5_cascade(f, oi_drop=0.005),
+    "E1t_pd_sweep_fade_with_1h_bias": e1t_pd_sweep_with_bias,
+    "E2r_asia_sweep_FOLLOW": e2r_asia_break_follow,
+    "E4h_1h_displacement_follow": e4h_h1_displacement,
+}
+
 EVENTS = {
     "E1_pd_sweep_fade": e1_pd_sweep,
     "E2_asia_sweep_fade": e2_asia_sweep,

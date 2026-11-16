@@ -67,3 +67,43 @@ day-clustered bootstrap. Net = gross - 12 bps.
 Events with 2 <= |t| < 3.3 are "weak": they may be used only as secondary filters. An event whose effect is significant with the
 OPPOSITE sign to the hypothesis is reported as such and may be used in the observed direction (this is a data-driven
 choice and is counted as an extra test in the multiple-testing total).
+
+## 2026-11-16 — Phase 0 RESULT (train only; `reports/event_study.md`)
+
+**No event meets the pre-registered bar (|t| >= 3.3). No event has positive net return at any horizon; the upper 97.5%
+bound of net return is negative for every event/horizon except one noisy cell (E7b 60m, n=218).**
+
+| event | n | best horizon | gross bps | excess bps [95% CI] | t | verdict |
+|---|---|---|---|---|---|---|
+| E1 PD sweep fade | 4657 | 15m | +0.5 | +0.5 [-1.0,+1.9] | 0.6 | no edge |
+| E2 Asia sweep fade | 6154 | 60m | -3.0 | -3.1 [-6.3,-0.1] | -1.9 | no edge as fade; faint continuation |
+| E3 equal H/L raid fade | 902 | 15m | +1.2 | +1.2 [-1.3,+3.7] | 1.0 | no edge |
+| E4 displacement follow | 2720 | 5m | -2.6 | -2.7 [-4.6,-0.7] | -2.7 | WRONG SIGN: displacement bars mean-revert a little in the next 5m (weak) |
+| E5 cascade fade | 6232 | 60m | +1.6 | +1.9 [-1.5,+5.1] | 1.1 | no edge |
+| E5b cascade + OI drop fade | 2142 | 30m | +5.0 | +5.3 [+0.7,+10.1] | 2.2 | weak; right sign in all years; < costs |
+| E6 delta divergence fade | 762 | 30m | +3.0 | +3.4 [-0.3,+7.3] | 1.8 | no edge (suggestive) |
+| E7a NY open drive follow | 407 | 15m | -5.3 | -5.4 [-10.8,-0.6] | -2.1 | WRONG SIGN, weak (open drive fades) |
+| E7b London open drive follow | 218 | 30m | -5.2 | -5.4 [-21,+6.6] | -0.8 | no edge |
+
+Reading: the popular "liquidity sweep" patterns (E1, E2, E3) are statistically indistinguishable from random bars matched on
+time of day and volatility. The only effect in the hypothesised direction with year-by-year consistency is the cascade with an
+open-interest drop (forced position closing), ~5 bps over 30-60 min — less than half of the 12 bps round-trip cost.
+Tests so far: 36.
+
+### Phase 0b pre-registration (written BEFORE running)
+
+Reason: costs are 12 bps, so only larger/longer effects can matter. Two legitimate follow-ups, both with market logic:
+(1) dose-response — if E5b is truly forced-liquidation exhaustion, more extreme cascades (bigger move, volume, OI drop) should
+bounce more; (2) longer horizons (30/60/120/240 min) and higher-timeframe versions.
+
+| id | definition | hypothesis |
+|---|---|---|
+| E5c | cascade z>4, vol>5x, OI drop >= 1.0% | fade, larger effect than E5b |
+| E5d | cascade z>5, vol>5x, OI drop >= 1.5% | fade, larger still |
+| E5e | E5b but OI change strictly lagged one snapshot (robustness to OI timestamp latency) | fade; if the effect vanishes, E5b depended on zero-latency OI |
+| E5b-long | E5b at the long horizons | fade |
+| E1t | E1 only when the fade direction agrees with the 1H trend (close vs EMA50) | fade with HTF bias |
+| E2r | E2 reversed (follow the Asia-range sweep) — data-driven sign flip | follow |
+| E4h | 1H displacement bar (range > 2.5 ATR1h, outer-quartile close, breaks 24h high/low) | follow |
+
+7 definitions x 4 horizons = 28 tests -> cumulative 64 tests; Bonferroni threshold becomes |t| >= 3.4. Same decision rule.

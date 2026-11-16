@@ -112,9 +112,20 @@ def build_features(df1: pd.DataFrame, oi: pd.Series | None = None) -> pd.DataFra
     h1ret = np.log(h1["close"]).diff()
     f["h1_ret_prev"] = pd.Series(h1ret.to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
 
+    # 1H displacement (completed 1H bars): range > 2.5 x ATR1h(14, prior), close in outer quartile,
+    # close beyond prior 24h high/low. Placed on the 5m row whose close coincides with the 1H close.
+    tr1 = true_range(h1["high"], h1["low"], h1["close"]); atr1 = tr1.rolling(14).mean().shift(1)
+    rng1 = h1["high"] - h1["low"]; pos1 = ((h1["close"] - h1["low"]) / rng1).where(rng1 > 0, 0.5)
+    up = (rng1 > 2.5 * atr1) & (pos1 >= 0.75) & (h1["close"] > h1["high"].rolling(24).max().shift(1))
+    dn = (rng1 > 2.5 * atr1) & (pos1 <= 0.25) & (h1["close"] < h1["low"].rolling(24).min().shift(1))
+    d1 = pd.Series(up.astype(int) - dn.astype(int)).to_numpy()
+    f["h1_disp"] = pd.Series(d1, index=known - pd.Timedelta(minutes=5)).reindex(f.index).fillna(0).astype("int8").to_numpy()
+    f["h1_atr"] = pd.Series(tr1.rolling(14).mean().to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
+
     if oi is not None:
         # snapshot stamped at bar close (t+5m) vs snapshot at bar open (t).  NOTE: assumes the OI
         # snapshot stamped t+5m is observable at t+5m (live: REST poll). Flagged as an assumption.
+        oi = oi.where(oi > 0)
         o_close = oi.reindex(t_close).to_numpy(); o_open = oi.reindex(f.index).to_numpy()
         f["oi_chg"] = o_close / o_open - 1.0
         o_lag = oi.reindex(f.index - pd.Timedelta(minutes=5)).to_numpy()
