@@ -62,7 +62,7 @@ def _equal_levels(high, low, atr, lookback, wing, tol):
     return eh, el
 
 
-def build_features(df1: pd.DataFrame, oi: pd.Series | None = None) -> pd.DataFrame:
+def build_features(df1: pd.DataFrame, oi: pd.Series | None = None, spot: pd.DataFrame | None = None) -> pd.DataFrame:
     b = resample(df1, BAR)
     f = b[["open", "high", "low", "close", "volume"]].copy()
     f["filled"] = b["filled"] > 0
@@ -124,6 +124,13 @@ def build_features(df1: pd.DataFrame, oi: pd.Series | None = None) -> pd.DataFra
 
     h1d = (2 * h1["taker_buy_volume"] - h1["volume"]) / h1["volume"].where(h1["volume"] > 0)
     f["h1_delta_frac"] = pd.Series(h1d.to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
+
+    if spot is not None:
+        # perp premium over spot at completed 1H closes; change over the last completed hour.
+        sc = spot["close"].reindex(df1.index).ffill()
+        prem = (df1["close"] / sc - 1.0).resample("1h", label="left", closed="left").last()
+        pchg = prem - prem.shift(1)
+        f["h1_prem_chg"] = pd.Series(pchg.reindex(h1.index).to_numpy(), index=known).reindex(t_close, method="ffill").to_numpy()
 
     if oi is not None:
         # snapshot stamped at bar close (t+5m) vs snapshot at bar open (t).  NOTE: assumes the OI

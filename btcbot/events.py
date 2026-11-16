@@ -169,6 +169,15 @@ def cascade_reclaim(f, z=3.0, v=3.0, oi_drop=0.005, window=12):
     return out
 
 
+def h1_disp_lead(f, lead="spot"):
+    """1H displacement split by who led: 'spot' = perp premium fell during an up-move (rose during a
+    down-move), i.e. spot moved further than the perp; 'perp' = the opposite (leverage-led)."""
+    d = e4h_h1_displacement(f)
+    x = d * np.sign(f["h1_prem_chg"])
+    ok = (x < 0) if lead == "spot" else (x > 0)
+    return d.where(ok, 0).astype("int8")
+
+
 EVENTS_0B = {
     "E5c_cascade_z4_v5_oi1.0_fade": lambda f: e5_cascade(f, z=4, v=5, oi_drop=0.010),
     "E5d_cascade_z5_v5_oi1.5_fade": lambda f: e5_cascade(f, z=5, v=5, oi_drop=0.015),

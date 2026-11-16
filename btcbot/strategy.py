@@ -19,6 +19,7 @@ EVENT_FUNCS = {
     "trend_sweep": lambda f: ev.trend_sweep(f),
     "h1_disp_oi": ev.h1_disp_oi,
     "cascade_reclaim": ev.cascade_reclaim,
+    "h1_disp_lead": ev.h1_disp_lead,
 }
 
 

@@ -16,7 +16,8 @@ def load_panel(final_holdout: bool = False, cache: bool = True):
         f = pd.read_parquet(p)
     else:
         oi = data.load_metrics(final_holdout=final_holdout)["oi"]
-        f = build_features(df1, oi)
+        spot = data.load_klines("spot", final_holdout=final_holdout)
+        f = build_features(df1, oi, spot)
         p.parent.mkdir(parents=True, exist_ok=True)
         f.to_parquet(p)
     return df1, f, fund

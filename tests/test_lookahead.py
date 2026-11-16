@@ -14,6 +14,8 @@ def chunk():
     df1 = data.load_klines("fut", end=pd.Timestamp("2021-07-01", tz="UTC"))
     df1 = df1[df1.index >= pd.Timestamp("2021-04-20", tz="UTC")]
     oi = data.load_metrics(end=pd.Timestamp("2021-07-01", tz="UTC"))["oi"]
+    spot = data.load_klines("spot", end=pd.Timestamp("2021-07-01", tz="UTC"))
+    build_features.__defaults__ = (None, spot)   # tests exercise the spot-premium feature too
     return df1, oi
 
 
@@ -35,7 +37,7 @@ def test_features_are_causal_by_truncation(chunk):
     cuts = rng.choice(np.arange(len(full) - 4000, len(full) - 1), size=12, replace=False)
     for c in cuts:
         t_close = full.index[c] + pd.Timedelta(minutes=5)
-        part = build_features(df1[df1.index < t_close], oi[oi.index <= t_close])
+        part = build_features(df1[df1.index < t_close], oi[oi.index <= t_close], spot=build_features.__defaults__[1][build_features.__defaults__[1].index < t_close])
         a, b = full.iloc[c], part.iloc[-1]
         assert part.index[-1] == full.index[c]
         for col in full.columns:
@@ -56,7 +58,9 @@ def test_signals_unchanged_when_future_is_scrambled(chunk):
     mod.loc[fut, "low"] = mod.loc[fut, ["open", "high", "low", "close"]].min(axis=1)
     mod.loc[fut, "volume"] *= 3; mod.loc[fut, "taker_buy_volume"] *= 2
     oi2 = oi.copy(); oi2[oi2.index > cut] *= 0.5
-    fa, fb = build_features(df1, oi), build_features(mod, oi2)
+    sp = build_features.__defaults__[1]
+    sp2 = sp.copy(); sp2.loc[sp2.index >= cut, "close"] *= 1.07
+    fa, fb = build_features(df1, oi, sp), build_features(mod, oi2, sp2)
     for ev in EVENT_FUNCS:
         p = dict(event=ev, k_stop=1.0, rr=2.0, max_hold=240)
         sa, sb = make_signals(fa, p), make_signals(fb, p)

@@ -202,3 +202,23 @@ continuation after a 1H displacement that breaks 24h structure (gross +0.15..0.2
 | V12 | same with E5c cascade | dose | better than V11 if hypothesis true |
 | V13 | 1H displacement + rising OI, stop 2 ATR1h, RR 2, 720m | combine the two pre-reasoned improvements (V06 exits + V09 filter) | ~ +0.12..0.15R on train; n too small for OOS bar |
 | V14 | 1H displacement follow with LIMIT entry 0.25 ATR1h back from the close, valid 60m, maker fee; exits as V04 | cut entry cost and improve price; risk: adverse selection (only the failing moves fill) | ambiguous; if adverse selection dominates exp < V04 |
+
+### Result V11-V14 (Train). Variants used: 14.
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x | PF | note |
+|---|---|---|---|---|---|
+| V11 | 1640 | -0.180 [-0.23,-0.13] | -0.270 | 0.72 | waiting for the reclaim bar does not rescue the cascade fade |
+| V12 | 649 | -0.136 [-0.21,-0.06] | -0.210 | 0.76 | |
+| V13 | 147 | +0.048 [-0.11,+0.21] | +0.006 | 1.10 | the two "improvements" do not stack (V09 +0.126, V06 +0.081) -> they were mostly noise |
+| V14 | 326 | +0.043 [-0.07,+0.16] | -0.010 | 1.08 | limit entry saves cost (0.09R vs 0.13R) but adverse selection eats it |
+
+(For V11/V12 the random baseline uses the 0.5 ATR floor stop rather than the structural stop, so it is not a like-for-like comparison; both are negative regardless.)
+
+### Pre-registration V15-V16 (written BEFORE running; Train only)
+
+New data-backed idea using the spot reference series: who led the displacement?
+Perp premium over spot = fut close / spot close - 1 at 1H closes.
+| id | rule | reasoning | prediction |
+|---|---|---|---|
+| V15 | 1H displacement where SPOT led (premium fell on an up-move / rose on a down-move); exits as V04 | spot-led = unlevered real demand (institutional/ETF-style flow) -> persists | V15 > V04 |
+| V16 | 1H displacement where the PERP led (premium widened in the move direction) | leverage-led chase -> less continuation | V16 < V04 |
