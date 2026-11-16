@@ -269,3 +269,40 @@ Alive on Train: spot-led 1H displacement follow, V15 (k=2.5) and V18 (k=2.0).
   perturbations on Train+Validation do not flip the sign. The 90% CI on ~50 trades cannot be expected to exclude 0, so CI > 0 is
   required only on the pooled OOS sample (Validation + Holdout) as the pass criteria state.
 - If both pass the gate, V18 is the one frozen (more trades); if neither passes, the holdout is NOT run and the verdict is FAIL.
+
+### VALIDATION RESULT (2024-02-08 .. 2025-05-31) — candidates FAIL
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x | PF | random mean (p) | q profitable |
+|---|---|---|---|---|---|---|
+| V15 spot-led k=2.5 | 71 | **-0.131** [-0.39,+0.15] | -0.227 | 0.81 | -0.20 (0.28) | 1/6 |
+| V18 spot-led k=2.0 | 112 | **-0.225** [-0.42,-0.03] | -0.321 | 0.69 | -0.18 (0.70) | 1/6 |
+| V16 perp-led (contrast) | 89 | 0.000 [-0.24,+0.25] | -0.088 | 1.00 | -0.20 (0.05) | 4/6 |
+
+- Both candidates lose money on validation and are indistinguishable from random entries. The mechanism contrast reversed
+  (perp-led >= spot-led). **The "spot-led displacement" Train result was a selection artefact (best of 18 variants) and/or
+  specific to 2021-22. V15 and V18 are REJECTED. The gate to the holdout is not met.**
+
+Diagnostic runs on validation (extra looks at validation, logged; not new variants):
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x | note |
+|---|---|---|---|---|
+| V04 plain displacement, 1 ATR / 240m | 160 | -0.058 [-0.23,+0.12] | -0.150 | Train was +0.058 |
+| V06 plain displacement, 2 ATR / 720m | 143 | +0.116 [-0.04,+0.27] | +0.069 | Train was +0.081; beats random (p=0.02); 5/6 quarters positive |
+| V01 cascade fade | 46 | -0.343 [-0.63,-0.03] | -0.418 | still dead |
+| V08 trend sweep | 655 | -0.105 [-0.18,-0.03] | -0.204 | still dead |
+
+Diagnosis of the failure: not costs (gross R of V18 on validation is itself -0.07), not too few trades, not look-ahead
+(would inflate, not deflate): it is over-selection on Train. The only thing that looks the same on Train and Validation is the
+weak, wide-stop continuation after a 1H displacement (V06: +0.08R train, +0.12R validation) — a small momentum effect,
+below the +0.15R bar and with a CI that includes zero at 1.5x costs.
+
+### Pre-registration V19-V20 (Train first). Variants used: 18 -> 20.
+
+Hypothesis from the diagnosis: the continuation edge is real but small in bps, so only cost-in-R matters; longer holds and
+letting winners run should raise net R. NOTE: V06's validation result has already been seen, so validation is no longer a
+clean selector for this family; only Train results decide whether these go further, and the bar is the fixed one.
+| id | rule | prediction |
+|---|---|---|
+| V19 | 1H displacement follow, stop 3 ATR1h, RR 2, time stop 1440m | cost ~0.05R; exp +0.08..0.14R; still under the bar |
+| V20 | 1H displacement follow, stop 2 ATR1h, RR 3, time stop 720m | ~ V06 (few trades reach 3R in 12h) |
+Gate: proceed only if Train exp > +0.15R at 1.0x and > 0 at 1.5x with 90% CI lower bound > 0 at 1.0x.
