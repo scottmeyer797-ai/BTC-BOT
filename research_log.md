@@ -107,3 +107,47 @@ bounce more; (2) longer horizons (30/60/120/240 min) and higher-timeframe versio
 | E4h | 1H displacement bar (range > 2.5 ATR1h, outer-quartile close, breaks 24h high/low) | follow |
 
 7 definitions x 4 horizons = 28 tests -> cumulative 64 tests; Bonferroni threshold becomes |t| >= 3.4. Same decision rule.
+
+## 2026-11-16 — Phase 0b RESULT (train only; `reports/event_study_0b.md`)
+
+| event | n | gross bps @30/60/120/240m | best excess [95% CI] | t | net @240m |
+|---|---|---|---|---|---|
+| E5b cascade+OI>=0.5% | 2142 | +5.0 / +4.1 / +7.5 / +8.9 | +7.5 [+1.1,+13.7] @120 | 2.3 | -3.1 |
+| E5c z4,v5,OI>=1.0% | 779 | +5.0 / +4.8 / +9.6 / +16.8 | +16.1 [+2.0,+29.9] @240 | 2.3 | +4.8 |
+| E5d z5,v5,OI>=1.5% | 388 | +9.5 / +8.0 / +17.8 / +24.3 | +23.2 [+1.5,+47.4] @240 | 2.0 | +12.3 |
+| E5e lagged-OI cascade | 532 | +6.7 / +5.0 / +1.2 / +8.0 | n.s. | 1.1 | -4.0 |
+| E1t PD sweep with 1H bias | 301 | +7.5 / -1.6 / 0.0 / 0.0 | n.s. | 1.6 | -12.0 |
+| E2r Asia sweep FOLLOW | 6154 | +1.4 / +3.0 / +3.4 / +5.7 | +3.1 [0.0,+6.4] @60 | 1.9 | -6.3 |
+| E4h 1H displacement follow | 405 | +3.0 / +4.4 / +9.4 / +19.6 | +18.4 [+1.2,+35.1] @240 | 2.1 | +7.6 |
+
+- **Nothing reaches |t| >= 3.4. Formally, zero events qualify as strategy components.** Cumulative tests: 64. With 64 tests,
+  ~3 results at |t|>2 are expected by chance alone; I observe about 8 cells above 2, clustered in two families.
+- There IS a monotone dose-response in the cascade family (bigger flush + bigger OI drop -> bigger 4h bounce: 8.9 -> 16.8 -> 24.3 bps),
+  which is what the forced-liquidation hypothesis predicts, and the sign is right in every train year for E5d@240. That is weak,
+  suggestive evidence - not a credible edge. 2021 carries most of it.
+- E5e: the effect needs the OI drop measured in the cascade bar itself; an OI drop one bar earlier carries nothing.
+  The strategy therefore depends on reading open interest at the bar close (live: REST poll, feasible, but the archive
+  timestamp alignment is an assumption — see Known weaknesses).
+- The classic sweep patterns with HTF bias (E1t) do not help.
+
+**PHASE 0 PROGRESS NOTE:** no event has a statistically credible edge after costs. Honest reading: the brief says only credible
+events may become components, so the strict conclusion is already "no edge found". I nevertheless carry the two families whose
+*net point estimate* is positive at 4h (cascade fade, 1H displacement follow) plus the frequent-but-weak ones into the strategy loop as an
+EXPLORATORY test under the full protocol — explicitly a deviation from the strict rule, made because a stop/target structure
+can in principle extract a different payoff than a fixed-horizon return. Any result is to be haircut for 64 event tests + all variants.
+
+## 2026-11-16 — Strategy loop
+
+Common structure (fixed stop, fixed RR, time stop; multi-timeframe): event on 5m bars, stop = k x ATR(1H,14), target = rr x stop,
+time stop, market entry at next 1m open, one position at a time, 1% risk, leverage cap 5x.
+Stops are scaled to 1H ATR (typ. 60-120 bps) so that the 12 bps round trip is ~0.1-0.2R rather than ~1R.
+
+### Pre-registration V01-V05 (written BEFORE running; Train only)
+
+| id | rule | prediction |
+|---|---|---|
+| V01 | cascade E5c (z>4, vol>5x, OI drop>=1%) fade; stop 1.0 ATR1h, RR 2, time stop 240m | exp > 0 but < +0.15R; fails bar |
+| V02 | cascade E5d (z>5, vol>5x, OI>=1.5%) fade; same exits | exp higher than V01 (dose-response) but too few trades (<40/yr) |
+| V03 | cascade E5b (z>3, vol>3x, OI>=0.5%) fade; same exits | exp <= 0 after costs |
+| V04 | 1H displacement follow; stop 1.0 ATR1h, RR 2, time stop 240m | exp slightly > 0; inconsistent by year |
+| V05 | Asia-range sweep FOLLOW (E2r); same exits | exp ~ 0 or negative after costs |
