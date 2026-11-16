@@ -1,0 +1,11 @@
+{
+  "_comment": "FIXED before any backtest. Half-open UTC intervals [start, end). ~60/20/20 by time, aligned to month boundaries so that holdout months are never downloaded before the freeze step. 7-day embargo between splits.",
+  "symbol": "BTCUSDT",
+  "data_start": "2020-01-01",
+  "train":    {"start": "2020-01-01", "end": "2024-02-01"},
+  "validation": {"start": "2024-02-08", "end": "2025-06-01"},
+  "holdout":  {"start": "2025-06-08", "end": "2026-11-01"},
+  "embargo_days": 7,
+  "first_holdout_month": "2025-06",
+  "seed": 20261116
+}
