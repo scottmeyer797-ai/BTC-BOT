@@ -18,12 +18,15 @@ EVENT_FUNCS = {
     "h1_disp": lambda f: ev.e4h_h1_displacement(f),
     "trend_sweep": lambda f: ev.trend_sweep(f),
     "h1_disp_oi": ev.h1_disp_oi,
+    "cascade_reclaim": ev.cascade_reclaim,
 }
 
 
 def make_signals(f: pd.DataFrame, p: dict) -> pd.DataFrame:
     """Returns a frame indexed by ENTRY time (= signal bar close = next 1m bar open)."""
-    d = EVENT_FUNCS[p["event"]](f, **p.get("event_kw", {})).astype("int64")
+    raw = EVENT_FUNCS[p["event"]](f, **p.get("event_kw", {}))
+    stop_px = raw.attrs.get("stop_px")
+    d = raw.astype("int64")
     d = d * p.get("flip", 1)
     if p.get("bias") == "with":        # trade only in the direction of the 1H trend
         d = d.where(d == f["h1_bias"], 0)
@@ -38,12 +41,14 @@ def make_signals(f: pd.DataFrame, p: dict) -> pd.DataFrame:
         hc = (f.index + pd.Timedelta(minutes=5)).hour
         d = d.where((hc >= a) & (hc < b), 0)
     stop = p["k_stop"] * f["h1_atr"]
+    if stop_px is not None:            # structural stop with a floor of k_stop x ATR(1H)
+        stop = np.maximum((f["close"] - stop_px).abs() + 0.1 * f["atr"], stop)
     out = pd.DataFrame({"dir": d.fillna(0).astype("int64").to_numpy(),
                         "stop_dist": stop.to_numpy(),
                         "tgt_dist": (p["rr"] * stop).to_numpy(),
                         "max_hold": int(p["max_hold"])},
                        index=f.index + pd.Timedelta(minutes=5))
-    if "limit_off_atr" in p:
-        out["limit_off"] = (p["limit_off_atr"] * f["atr"]).to_numpy()
+    if "limit_off_atr" in p:           # limit entry offset in units of ATR(1H)
+        out["limit_off"] = (p["limit_off_atr"] * f["h1_atr"]).to_numpy()
     out.loc[~np.isfinite(out["stop_dist"]) | (out["stop_dist"] <= 0), "dir"] = 0
     return out

@@ -90,17 +90,16 @@ _CTX: dict = {}
 
 def _context(df1: pd.DataFrame, funding: pd.Series):
     """Arrays shared by all runs on the same data (cached by object identity)."""
-    key = (id(df1), id(funding), len(df1))
-    if key not in _CTX:
-        _CTX.clear()
+    key = "ctx"
+    if key not in _CTX or _CTX[key][4] is not df1 or _CTX[key][5] is not funding:
         idx = df1.index
         fr = np.zeros(len(idx) + 2)
         fu = funding[funding.index <= idx[-1]]
         fpos = idx.get_indexer(fu.index)
         fr[fpos[fpos >= 0]] = fu.to_numpy()[fpos >= 0]
         _CTX[key] = (df1["open"].to_numpy(), df1["high"].to_numpy(), df1["low"].to_numpy(),
-                     np.concatenate([[0.0], np.cumsum(fr)]))
-    return _CTX[key]
+                     np.concatenate([[0.0], np.cumsum(fr)]), df1, funding)   # refs kept: identity check is safe
+    return _CTX[key][:4]
 
 
 def run_backtest(df1: pd.DataFrame, funding: pd.Series, signals: pd.DataFrame,

@@ -18,3 +18,10 @@ VARIANTS.update({
     "V09": dict(event="h1_disp_oi", event_kw=dict(oi_sign=1), **_X),
     "V10": dict(event="h1_disp_oi", event_kw=dict(oi_sign=-1), **_X),
 })
+
+VARIANTS.update({
+    "V11": dict(event="cascade_reclaim", event_kw=dict(z=3, v=3, oi_drop=0.005, window=12), k_stop=0.5, rr=2.0, max_hold=240),
+    "V12": dict(event="cascade_reclaim", event_kw=dict(z=4, v=5, oi_drop=0.010, window=12), k_stop=0.5, rr=2.0, max_hold=240),
+    "V13": dict(event="h1_disp_oi", event_kw=dict(oi_sign=1), k_stop=2.0, rr=2.0, max_hold=720),
+    "V14": dict(event="h1_disp", k_stop=1.0, rr=2.0, max_hold=240, limit_off_atr=0.25, limit_win=60),
+})

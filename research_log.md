@@ -177,3 +177,28 @@ Diagnosis:
 | V08 | "trend sweep": 1H trend up + 5m sweep of prior 4h low with close back above (mirror), London/NY 07-17 UTC; stop 1 ATR1h, RR 2, 240m | the user's preferred HTF-bias + LTF-liquidity-raid + session window style | Phase 0 (E1t) says no edge: exp ~ -0.15R (= costs) |
 | V09 | 1H displacement WITH rising open interest over the hour; exits as V04 | rising OI = new positions = initiative flow that should continue | V09 > V04 |
 | V10 | 1H displacement WITH falling open interest; exits as V04 | falling OI = squeeze/liquidations, fuel is spent | V10 < V04 |
+
+### Result V06-V10 (Train). Variants used: 10.
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x | PF | by year 2020/21/22/23 | note |
+|---|---|---|---|---|---|---|
+| V06 | 384 | +0.081 [-0.01,+0.18] | +0.040 | 1.18 | +0.05/+0.13/+0.13/-0.07 | cost-in-R halves as predicted; still below bar |
+| V07 | 688 | -0.073 [-0.11,-0.03] | -0.103 | 0.76 | — | even with the stop out of the way the cascade fade loses: drift is not extractable |
+| V08 | 2026 | -0.207 [-0.25,-0.17] | -0.302 | 0.66 | — | HTF-bias + liquidity-raid + session window = random entries minus costs (random: -0.19R) |
+| V09 | 155 | +0.126 [-0.05,+0.30] | +0.044 | 1.23 | -0.39/+0.11/+0.46/-0.10 | ordering V09 > V04 > V10 as predicted, differences not significant; 45 trades/yr = too few |
+| V10 | 192 | +0.038 [-0.11,+0.19] | -0.042 | 1.07 | -0.16/-0.04/+0.25/-0.04 | |
+
+Bug note: the simulator's array cache was keyed by `id(df)`; a unit test exposed that a recycled id could serve stale arrays.
+Fixed (identity check with held reference). Real runs always used one long-lived frame; V04/V06 re-run gave identical numbers, so no result changed.
+
+Diagnosis: the cascade family is dead (V01-V03, V07). The sweep family is dead (V05, V08). The only gross edge is
+continuation after a 1H displacement that breaks 24h structure (gross +0.15..0.26R, net +0.06..0.13R), weak and 2022-heavy.
+
+### Pre-registration V11-V14 (written BEFORE running; Train only)
+
+| id | rule | reasoning | prediction |
+|---|---|---|---|
+| V11 | cascade E5b, then wait <= 60 min for a 5m reclaim bar (closes up and above prior bar high; mirrored); stop at flush extreme (floor 0.5 ATR1h), RR 2, 240m | V01 failed because it entered while the flush was still running; wait for the lower-timeframe turn and use the structural stop | most honest guess: -0.1R; would need > +0.15R |
+| V12 | same with E5c cascade | dose | better than V11 if hypothesis true |
+| V13 | 1H displacement + rising OI, stop 2 ATR1h, RR 2, 720m | combine the two pre-reasoned improvements (V06 exits + V09 filter) | ~ +0.12..0.15R on train; n too small for OOS bar |
+| V14 | 1H displacement follow with LIMIT entry 0.25 ATR1h back from the close, valid 60m, maker fee; exits as V04 | cut entry cost and improve price; risk: adverse selection (only the failing moves fill) | ambiguous; if adverse selection dominates exp < V04 |

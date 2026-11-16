@@ -7,6 +7,37 @@ the bar (index + 5min).  Directions encode the pre-registered hypothesis in rese
 from __future__ import annotations
 import numpy as np
 import pandas as pd
+from numba import njit
+
+
+@njit(cache=True)
+def _reclaim(casc, o, h, l, c, window):
+    """After a cascade bar (casc=+1 means flush DOWN, we look for longs) wait up to `window` bars for
+    the first bar that closes in our direction AND beyond the previous bar's extreme. Returns the
+    direction and the structural stop price (extreme of the flush so far)."""
+    n = len(c)
+    d = np.zeros(n, np.int8); stop = np.full(n, np.nan)
+    side = 0; ext = 0.0; left = 0
+    for i in range(1, n):
+        if side != 0 and casc[i] == 0:
+            if side > 0:
+                ext = min(ext, l[i])
+                if c[i] > o[i] and c[i] > h[i - 1]:
+                    d[i] = 1; stop[i] = ext; side = 0
+            else:
+                ext = max(ext, h[i])
+                if c[i] < o[i] and c[i] < l[i - 1]:
+                    d[i] = -1; stop[i] = ext; side = 0
+            left -= 1
+            if left <= 0:
+                side = 0
+        if casc[i] != 0:              # (re)arm on every cascade bar
+            if casc[i] == side:
+                ext = min(ext, l[i]) if side > 0 else max(ext, h[i])
+            else:
+                side = casc[i]; ext = l[i] if side > 0 else h[i]
+            left = window
+    return d, stop
 
 
 def _mk(f, short, long):
@@ -124,6 +155,18 @@ def h1_disp_oi(f, oi_sign=1):
     d = e4h_h1_displacement(f)
     ok = (np.sign(f["oi_chg_1h"]) == oi_sign)
     return d.where(ok, 0).astype("int8")
+
+
+def cascade_reclaim(f, z=3.0, v=3.0, oi_drop=0.005, window=12):
+    """Cascade (E5 family) followed within `window` 5m bars by a reclaim bar. Sets f-aligned
+    attribute `stop_px` (structural stop = extreme of the flush) on the returned Series."""
+    casc = e5_cascade(f, z=z, v=v, oi_drop=oi_drop)
+    d, stop = _reclaim(casc.to_numpy(), f["open"].to_numpy(), f["high"].to_numpy(), f["low"].to_numpy(),
+                       f["close"].to_numpy(), window)
+    out = pd.Series(d, index=f.index, dtype="int8")
+    out[f["filled"] | f["zero_vol"]] = 0
+    out.attrs["stop_px"] = pd.Series(stop, index=f.index)
+    return out
 
 
 EVENTS_0B = {

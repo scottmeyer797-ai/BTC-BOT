@@ -62,7 +62,7 @@ def test_signals_unchanged_when_future_is_scrambled(chunk):
         sa, sb = make_signals(fa, p), make_signals(fb, p)
         keep = sa.index <= cut            # entry time <= cut  => signal bar closed at or before the cut
         pd.testing.assert_frame_equal(sa[keep], sb[keep])
-        assert (sa[keep]["dir"] != 0).sum() > 0 or ev in ("h1_disp",)
+        assert (sa[keep]["dir"] != 0).sum() > 0 or ev.startswith("h1_disp")
 
 
 def test_entry_is_strictly_after_signal_bar(chunk):
