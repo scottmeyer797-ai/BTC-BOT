@@ -306,3 +306,30 @@ clean selector for this family; only Train results decide whether these go furth
 | V19 | 1H displacement follow, stop 3 ATR1h, RR 2, time stop 1440m | cost ~0.05R; exp +0.08..0.14R; still under the bar |
 | V20 | 1H displacement follow, stop 2 ATR1h, RR 3, time stop 720m | ~ V06 (few trades reach 3R in 12h) |
 Gate: proceed only if Train exp > +0.15R at 1.0x and > 0 at 1.5x with 90% CI lower bound > 0 at 1.0x.
+
+### Result V19-V20 (Train). Variants used: 20.
+
+| id | n | exp R 1.0x [90% CI] | exp R 1.5x [90% CI] | PF | q profitable |
+|---|---|---|---|---|---|
+| V19 | 353 | +0.087 [-0.02,+0.19] | +0.059 [-0.04,+0.16] | 1.19 | 47% |
+| V20 | 373 | +0.115 [+0.00,+0.23] | +0.072 [-0.04,+0.18] | 1.25 | 59% |
+
+Neither meets the gate (exp > +0.15R). The 1H-displacement-follow family sits on a plateau of about +0.08..0.12R at 1.0x and
++0.04..0.07R at 1.5x regardless of exits (V06, V19, V20) — robust to perturbation, but too small.
+`scripts/make_report.py` additionally ran V19/V20 on validation for a descriptive pooled table (extra validation looks, logged):
+pooled Train+Validation V06 +0.091R [+0.01,+0.17] at 1.0x, +0.048R [-0.04,+0.13] at 1.5x.
+
+### DECISION — loop stopped at 20 of 25 variants
+
+- No variant passed Train + Validation + robustness. **The final holdout is therefore NOT run and was never downloaded**
+  (`data/` contains no file for 2025-06 or later). It remains sealed and usable for future research.
+- I stop at 20 variants rather than spend the last 5: every remaining idea I can think of is a re-parameterisation of something
+  already tested, i.e. brute force, which the brief forbids.
+- Verdict: **FAIL — no strategy with a positive-expectancy edge meeting the pre-set criteria was found.**
+
+### Forward-test harness
+
+`btcbot/forward.py`. Replay equivalence: feeding historical 1m bars one by one through the paper engine reproduces the
+backtest trades exactly (tests/test_forward_replay.py; longer check in reports/forward_replay.json).
+Live mode could NOT be run here: the sandbox proxy blocks `fstream.binance.com` (websocket) and `fapi.binance.com` (REST)
+with HTTP 403. **Live paper trading has run for 0 days / 0 trades.**
