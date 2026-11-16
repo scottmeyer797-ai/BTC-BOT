@@ -1,0 +1,16 @@
+{
+  "V06 2023-01-10..2023-02-20": {
+    "forward_trades": 17,
+    "backtest_trades": 17,
+    "identical": true,
+    "max_abs_diff": 1.9984014443252818e-15,
+    "signals": 19
+  },
+  "V04 2021-05-01..2021-05-25": {
+    "forward_trades": 5,
+    "backtest_trades": 5,
+    "identical": true,
+    "max_abs_diff": 8.326672684688674e-16,
+    "signals": 5
+  }
+}
