@@ -10,7 +10,8 @@ Rules (long shown; short mirrored):
   * Target (limit): filled only if high >= target + tick (trade-through), at target, maker fee.
   * If stop and target are both reachable inside one bar, the STOP is assumed to have come first.
   * Time stop: after `max_hold` minutes exit at the next bar open with market slippage, taker fee.
-  * Funding: every real funding print while the position is open is charged/credited on notional.
+  * Funding: every real funding print while the position is open (strictly after the entry bar's
+    open) is charged/credited on notional.
   * One position at a time; signals arriving while a position is open are skipped.
 R = net return / (stop distance / reference price).
 """
@@ -73,8 +74,10 @@ def _simulate(o, h, l, entry_idx, direction, stop_dist, tgt_dist, max_hold, end_
             px_x = o[last] * (1.0 - d * slip_mkt)
             if last == end_idx - 1 and last < fill_bar + max_hold[s]:
                 reason = 3
-        # funding prints with fill_bar <= t <= j_exit  (fund_cum[i] = sum of rates at minutes < i)
-        funding = d * (fund_cum[j_exit + 1] - fund_cum[fill_bar])
+        # funding prints strictly after the fill bar open and up to the exit bar (a time/forced exit
+        # at the open of a funding minute is flat at the funding instant). fund_cum[i] = sum of rates at minutes < i
+        hi = j_exit + 1 if done else j_exit
+        funding = d * (fund_cum[max(hi, fill_bar + 1)] - fund_cum[fill_bar + 1])
         gross = d * (px_x - px_e) / px_e
         net = gross - fee_in - fee_out * (px_x / px_e) - funding
         risk = stop_dist[s] / level
@@ -111,7 +114,8 @@ def run_backtest(df1: pd.DataFrame, funding: pd.Series, signals: pd.DataFrame,
     idx = df1.index
     s = signals[(signals.index >= start) & (signals.index < end) & (signals["dir"] != 0)]
     s = s[np.isfinite(s["stop_dist"]) & (s["stop_dist"] > 0) & np.isfinite(s["tgt_dist"])]
-    e_idx = ((s.index - idx[0]) // pd.Timedelta(minutes=1)).to_numpy()   # df1 is a complete 1m grid
+    assert len(idx) == (idx[-1] - idx[0]) // pd.Timedelta(minutes=1) + 1, "df1 must be a complete 1m grid"
+    e_idx = ((s.index - idx[0]) // pd.Timedelta(minutes=1)).to_numpy()
     assert len(s) == 0 or (e_idx.min() >= 0 and e_idx.max() < len(idx))
     end_idx = int(idx.searchsorted(end))
     o, h, l, fund_cum = _context(df1, funding)

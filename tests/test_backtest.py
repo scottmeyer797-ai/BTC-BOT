@@ -90,3 +90,21 @@ def test_cost_multiplier():
     a = bt(bars({}, {}, {}), sig(5), c).iloc[0].net
     b = bt(bars({}, {}, {}), sig(5), c.scaled(1.5)).iloc[0].net
     assert b == pytest.approx(1.5 * a)
+
+
+def test_funding_boundaries():
+    """A print at the entry bar's open is not charged (position did not exist at the funding instant);
+    a print at the bar where a time exit happens at the open is not charged; a print on a stop bar is."""
+    flat = bars({}, {}, {})
+    assert bt(flat, sig(5, hold=10), fund=pd.Series([0.001], index=[IDX[5]])).iloc[0].net == pytest.approx(0.0)
+    assert bt(flat, sig(5, hold=10), fund=pd.Series([0.001], index=[IDX[15]])).iloc[0].net == pytest.approx(0.0)
+    assert bt(flat, sig(5, hold=10), fund=pd.Series([0.001], index=[IDX[14]])).iloc[0].net == pytest.approx(-0.001)
+    t = bt(bars({}, {}, {7: 98.0}), sig(5, hold=10), fund=pd.Series([0.001], index=[IDX[7]])).iloc[0]
+    assert t.reason == "stop" and t.net == pytest.approx(-0.01 - 0.001)
+
+
+def test_time_exit_bar_and_short_gap_stop():
+    t = bt(bars({15: 104.0}, {}, {}), sig(5, hold=10, stop=50, tgt=50)).iloc[0]
+    assert t.reason == "time" and t.exit_time == IDX[15] and t.exit_px == pytest.approx(104.0)
+    t = bt(bars({7: 106.0}, {}, {}), sig(5, d=-1), Costs(0, 0, 0, slip_stop=0.01)).iloc[0]
+    assert t.reason == "stop" and t.exit_px == pytest.approx(106.0 * 1.01)

@@ -19,7 +19,7 @@ tr = in_split(f.index, "train")
 o = f["open"]
 fwd = {h: np.log(o.shift(-(1 + h // 5)) / o.shift(-1)) for h in HORIZONS}   # entry next bar open
 year = f.index.year
-rvq = f["rv_day"].groupby(year).transform(lambda s: pd.qcut(s, 3, labels=False, duplicates="drop"))
+rvq = f["rv_day"].where(tr).groupby(year).transform(lambda s: pd.qcut(s, 3, labels=False, duplicates="drop"))  # train rows only
 key = pd.Series(year * 1000 + f.index.hour * 10, index=f.index) + rvq.fillna(-1)
 ok = tr & rvq.notna().to_numpy()
 rng = np.random.default_rng(SEED)

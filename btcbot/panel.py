@@ -8,8 +8,11 @@ from .config import DATA, split_bounds
 
 def load_panel(final_holdout: bool = False, cache: bool = True):
     """Returns (df1m, f5m, funding). Data end is the validation end unless final_holdout=True."""
+    import hashlib
+    from . import features as _f
+    h = hashlib.sha1(open(_f.__file__, "rb").read()).hexdigest()[:10]   # cache invalidates when features.py changes
     tag = "full" if final_holdout else "dev"
-    p = DATA / "cache" / f"features_{tag}.parquet"
+    p = DATA / "cache" / f"features_{tag}_{h}.parquet"
     df1 = data.load_klines("fut", final_holdout=final_holdout)
     fund = data.load_funding(final_holdout=final_holdout)
     if cache and p.exists():

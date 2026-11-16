@@ -333,3 +333,34 @@ pooled Train+Validation V06 +0.091R [+0.01,+0.17] at 1.0x, +0.048R [-0.04,+0.13]
 backtest trades exactly (tests/test_forward_replay.py; longer check in reports/forward_replay.json).
 Live mode could NOT be run here: the sandbox proxy blocks `fstream.binance.com` (websocket) and `fapi.binance.com` (REST)
 with HTTP 403. **Live paper trading has run for 0 days / 0 trades.**
+
+## 2026-11-16 — Independent audit (separate sub-agent that did not write the code)
+
+Scope: look-ahead, leakage, timestamps, fills, costs, statistics, holdout hygiene, log-vs-results consistency, and bugs that
+could hide a real edge. It re-implemented the backtester and the event study independently from the raw parquet files.
+
+Outcome: **no CRITICAL, no MAJOR findings.** Independent re-implementation reproduces V04/V06/V19/V20 trade-for-trade
+(prices to 1e-11) and the event-study rows exactly. Holdout: no timestamp >= 2025-06-01 anywhere on disk or in git history.
+All 42 feature columns and the signals of all 20 variants are unchanged when the future is randomised.
+
+Minor findings and what I did:
+| # | finding | action |
+|---|---|---|
+| 1 | funding window inclusive at both ends: a print at the entry bar's open (and at a time-exit bar's open) was charged | FIXED in `backtest.py` and `forward.py`, boundary tests added, **all variants re-run** |
+| 2 | event-study volatility terciles were cut on the whole dev frame (Jan-2024 train rows used later-2024 vol) | FIXED (train rows only), **both event studies re-run** |
+| 3 | validation was looked at beyond the gate (diagnostics V04/V06/V01/V08, pooled table V19/V20) | disclosed; validation is NOT out-of-sample for the displacement family; any future candidate must be judged on the holdout |
+| 4 | pre-registration and previous results share commits, so ordering inside a commit is on trust | disclosed; cannot be fixed retroactively |
+| 5 | feature cache had no invalidation (no result affected) | FIXED (cache keyed by hash of features.py) |
+| 6 | random-entry baseline has 3-9% fewer trades and slightly different risk; auditor's same-times/random-direction baseline gives the same conclusions | disclosed |
+| 7 | max drawdown is on closed-trade equity (understated); quarter stat counts the 1-month 2024Q1; Jan-2024 is a big share of train R for V04/V06 | disclosed in the report |
+| 8 | truncation test is vacuous on sparse columns; missing boundary tests | funding/time-exit/short-gap tests added; the scramble test (the strong one) and the auditor's all-variants scramble cover the rest |
+| 9 | small conservative simulator choices (false-negative direction, negligible) | left as is |
+
+Effect of the fixes on results: max |change in expectancy| over all 54 variant/split/cost rows = 0.0018R; max |change in t| in the
+event studies = 0.03. **No conclusion changed.** Numbers quoted earlier in this log are the pre-audit values (differences are in
+the third decimal); `reports/variants.csv`, `reports/event_study*.md` and `FINAL_REPORT.md` hold the post-audit values.
+
+## Multiple-testing counters (final)
+
+- Event definitions tried: 16 (9 in Phase 0, 7 in Phase 0b) x 4 horizons = **64 tests**.
+- Strategy variants tried: **20** of 25 allowed (V01-V20). Validation runs: 9 variant looks. Holdout runs: **0**.

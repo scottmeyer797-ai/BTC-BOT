@@ -80,7 +80,7 @@ class PaperEngine:
         self.pending = None
         if self.pos is not None:
             p = self.pos; d = p.dir
-            if self.funding_lookup is not None:
+            if self.funding_lookup is not None and p.fill_time < t < p.last_time:
                 r = self.funding_lookup(t)
                 if r:
                     p.funding += d * r
