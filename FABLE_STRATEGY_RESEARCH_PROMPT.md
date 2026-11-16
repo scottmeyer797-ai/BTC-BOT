@@ -13,7 +13,7 @@ You have full freedom to invent the strategy from your own logic. For inspiratio
 ## Hard constraints
 
 - **No real money. No live order placement.** Research and paper trading only.
-- Work only in this repo, on branch `claude/forex-trading-bot-ge2nla`. Commit often. Do not open a PR unless I ask.
+- Work only in this repo, on a branch named `research/btc-strategy`. Do not push to `main`. Commit often. Do not open a PR unless I ask.
 - Never put API keys in code or commits. Read them from environment variables, and tell me which ones you need.
 - Do not fabricate data or results. Every number in the report must come from code that is committed and re-runnable.
 
