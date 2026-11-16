@@ -1,0 +1,9 @@
+numpy
+pandas
+pyarrow
+numba
+scipy
+matplotlib
+tabulate
+websockets
+pytest
