@@ -244,3 +244,28 @@ Same logic, lower displacement threshold so that the OOS sample can reach 150 tr
 | V17 | spot-led 1H displacement with range > 1.5 ATR1h (instead of 2.5); exits as V04 | ~3x trades; edge diluted but > 0 if the mechanism is real (dose-response: V15 > V18 > V17) |
 | V18 | same with range > 2.0 ATR1h | in between |
 If V17/V18 are ~0 the V15 result is most likely a small-sample peak.
+
+### Result V17-V18 (Train). Variants used: 18.
+
+| id | k | n | exp R 1.0x [90% CI] | exp R 1.5x [90% CI] | PF | q profitable |
+|---|---|---|---|---|---|---|
+| V17 | 1.5 | 351 | +0.051 [-0.06,+0.16] | -0.019 | 1.10 | 47% |
+| V18 | 2.0 | 207 | +0.209 [+0.06,+0.36] | +0.137 [-0.01,+0.29] | 1.44 | 65% |
+| V15 | 2.5 | 128 | +0.282 [+0.09,+0.47] | +0.202 [+0.01,+0.40] | 1.60 | 59% |
+
+Monotone in the displacement threshold as predicted. V18 gives ~50 trades/yr -> ~135 OOS trades (just under 150); V17 has
+enough trades but no edge after costs. There is no version with both enough trades and an edge.
+
+**DEVELOPMENT PROGRESS NOTE:** 18 of 25 variants used. Dead on Train: cascade fades (V01-03, 07, 11, 12), sweeps (V05, V08),
+plain displacement (V04, V06, V14), OI-conditioned (V09, V10, V13), perp-led (V16), loose spot-led (V17).
+Alive on Train: spot-led 1H displacement follow, V15 (k=2.5) and V18 (k=2.0).
+
+### Pre-registration: VALIDATION test of V15, V18 (and V16 as mechanism contrast). Written BEFORE running.
+
+- Candidates are frozen as registered. No parameter is changed between Train and Validation.
+- Predictions: if the mechanism is real, V15 and V18 have exp > 0 on validation and V16 < V15. Expected n: V15 ~40, V18 ~65.
+- **Gate to the holdout (fixed now):** a candidate is frozen for the single holdout run only if, on Validation,
+  exp > +0.15R at 1.0x AND exp > 0 at 1.5x AND it beats the random-entry baseline (p < 0.05) AND the +/- parameter
+  perturbations on Train+Validation do not flip the sign. The 90% CI on ~50 trades cannot be expected to exclude 0, so CI > 0 is
+  required only on the pooled OOS sample (Validation + Holdout) as the pass criteria state.
+- If both pass the gate, V18 is the one frozen (more trades); if neither passes, the holdout is NOT run and the verdict is FAIL.
